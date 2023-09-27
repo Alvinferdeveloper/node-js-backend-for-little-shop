@@ -1,7 +1,8 @@
 const express = require('express');
 const router = express.Router();
-const addShop= require('../controllers/shopController');
+const {addShop,getShop}= require('../controllers/shopController');
 
-router.post('/shopLogin',addShop);
+router.post('/addshop',addShop);
+router.get('/getShop/:id',getShop)
 
 module.exports = router;

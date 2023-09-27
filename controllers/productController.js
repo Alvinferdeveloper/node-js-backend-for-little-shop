@@ -1,8 +1,8 @@
 const validator = require('validator');
 const Product = require('../models/product')
 
-const addProduct = (req,res,next)=>{
-    const {name,price,availables,features,description,category,rating} = req.body;
+const addProduct = (req,res)=>{
+    const {name,price,availables} = req.body;
     const {id:id_shop} = req.shop;
     if(!name || !price || !availables){
         return res.status(403).json({
@@ -22,13 +22,7 @@ const addProduct = (req,res,next)=>{
     }
 
     const productToAdd = {
-        name,
-        price,
-        availables,
-        features: features && features,
-        description:description && description,
-        category:category && category,
-        rating: rating && rating,
+       ...req.body,
         id_shop
     }
 
@@ -44,7 +38,36 @@ const addProduct = (req,res,next)=>{
             message:"No se pudo agregarer el producto"
         })
     })
+};
+
+
+const getProduct = async (req,res) =>{
+    const {id} = req.params;
+    let product;
+    try {
+        product = await Product.findById(id);
+        if(!product){
+            return res.status(404).json({
+                status:"error",
+                message:"No se pudo encontrar el producto"
+            });
+        }
+    }
+    catch{
+        return res.status(404).json({
+            status:"error",
+            message:"error al encontrar el producto"
+        });
+    }
+
+    return res.status(200).json({
+        status:"success",
+        product
+    });
 }
 
 
-module.exports = addProduct;
+module.exports = {
+    addProduct,
+    getProduct,
+};

@@ -6,6 +6,7 @@ const generateUserToken = (user)=>{
         id:user._id,
         phone:user.phone,
         name:user.name,
+        lastname:user.lastname,
         profilePicture:user.profilePicture,
         rol:user.rol,
         iat:moment().unix(),

@@ -6,11 +6,17 @@ const subir = require('../settings/pruebafirebase');
 
 const addUser = async (req,res)=>{
     const {name,password,phone,lastName} = req.body;
-    console.log(req.body);
     if(!name || !password || !phone){
         return res.status(400).json({error:'Informacion necesaria incompleta',status: 400});
     }
 
+    const userWhitSamePhone = await user.findOne({phone: phone});
+    if(userWhitSamePhone){
+        return res.status(403).json({
+            status:"error",
+            message:"Este telefono ya esta siendo usado"
+        })
+    }
     const nameValid = validator.isLength(name,{min:2,max:undefined});
     const passwordIsValid = /\d/.test(password) && /[a-z]/.test(password) && /[A-Z]/.test(password) && /[^a-zA-Z\d]/.test(password);
     const phoneIsvalid = phone.length==8 && true;
@@ -26,10 +32,8 @@ const addUser = async (req,res)=>{
         return res.status(400).json({error:"no se pudo hashear el password",status:400});
     }
     const userToCreate = {
-        name,
-        password:encryptedPassword,
-        phone,
-        lastName: lastName && lastName,
+        ...req.body,
+        password: encryptedPassword
     }
     const userCreated = new user(userToCreate);
     const token = generateUserToken(userCreated)
@@ -40,9 +44,10 @@ const addUser = async (req,res)=>{
             user:{
                 id:userCreated.id,
                 name,
-                lastName: lastName && lastName,
+                lastName,
                 phone,
                 rol:userCreated.rol,
+                profilePicture:userCreated.profilePicture,
                 token,
             }
     
@@ -74,7 +79,54 @@ const uploadProfile = async (req, res) => {
     }
 };
 
+
+const getUser = async(req,res) =>{
+    const {id} = req.user;
+    const userRecovered = await user.findById(id);
+    res.status(200).json({
+        status: 'success',
+        user:userRecovered,
+    })
+}
+
+const userLogIn = async(req,res) =>{
+    const {phone,password} = req.body;
+    const usergot = await user.findOne({phone:phone});
+    if(!usergot){
+        return res.status(404).json({
+            status: 'error',
+            message: 'User not found'
+        });
+    }
+
+    const coinciden = await bcrypt.compare(password,usergot.password);
+    console.log(coinciden);
+    if(!coinciden){
+        return res.status(404).json({
+            status: 'error',
+            message:'password incorrect',
+        });
+    }
+    const payload = {
+        id:usergot.id,
+        phone:usergot.phone,
+        name:usergot.name,
+        profilePicture:usergot.profilePicture,
+        rol:usergot.rol,
+        lastName:usergot.lastName,
+    }
+    const token = generateUserToken(payload);
+    return res.status(200).json({
+        status: 'success',
+        message: 'User logged in successfully',
+        payload,
+        token
+    });
+};
+
 module.exports = {
     addUser,
-    uploadProfile
+    uploadProfile,
+    getUser,
+    userLogIn
 };

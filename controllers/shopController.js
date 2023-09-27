@@ -29,17 +29,15 @@ const addShop = async (req,res)=>{
         return res.status(400).json({error:"no se pudo hashear el password",status:400});
     }
     const shopToCreate = {
-        name,
+        ...req.body,
         password:encryptedPassword,
-        phone,
-        departamento,
-        municipio,
-        city,
-        exactDirection: exactDirection && exactDirection
+
     }
     const shopCreated = new shop(shopToCreate);
+    console.log(shopCreated);
     const token = generateShopToken(shopCreated);
     shopCreated.save().then((user)=>{
+        console.log(user)
         return res.status(200).json({
             message:"tienda creado exitosamente",
             status:200,
@@ -50,7 +48,7 @@ const addShop = async (req,res)=>{
                 departamento,
                 municipio,
                 city,
-                exactDirection: exactDirection && exactDirection,
+                exactDirection,
                 rol:shopCreated.rol,
                 token,
             }
@@ -61,4 +59,29 @@ const addShop = async (req,res)=>{
     });
 };
 
-module.exports = addShop;
+
+const getShop = async (req,res)=>{
+    const {id} = req.params;
+    let shopgot;
+    try {
+        shopgot = await shop.findById(id);
+        console.log(shopgot);
+    }
+    catch{
+        return res.status(404).json({
+            status:"error",
+            message:"No se pudo encontrar la tienda"
+        })
+    }
+    
+
+    return res.status(200).json({
+        status:"success",
+        shopgot,
+    });
+}
+
+module.exports = {
+    addShop,
+    getShop
+};
