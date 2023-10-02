@@ -1,5 +1,7 @@
 const validator = require('validator');
-const Product = require('../models/product')
+const Product = require('../models/product');
+const product = require('../models/product');
+const upload = require('../services/pruebafirebase');
 
 const addProduct = (req,res)=>{
     const {name,price,availables} = req.body;
@@ -66,8 +68,46 @@ const getProduct = async (req,res) =>{
     });
 }
 
+const uploadProductPictures = async (req,res) => {
+    const {files} = req;
+    const {idProduct} = req.params;
+    let url;
+    let missing;
+    let counter=0;
+    try {
+        let productgot = await product.findById(idProduct);
+        for (let picture of files){
+                if(productgot.pictures.length <= 5) {
+                    url = await upload(picture,"product");
+                    productgot.pictures.push(url);
+                    productgot.save();
+                    counter++;
+                }
+                else {
+                    missing=files.length-counter;
+                }
+            
+        }
+
+        res.status(200).json({
+            status:"success",
+            message:"Images uploaded successfully",
+            productgot,
+            missing
+        })
+    }
+    catch(err){
+        console.log(err);
+        res.status(404).json({
+            status: 'error',
+            message: 'product not found'
+        })
+    }
+}
+
 
 module.exports = {
     addProduct,
     getProduct,
+    uploadProductPictures
 };

@@ -2,7 +2,7 @@ const validator = require('validator');
 const bcrypt = require("bcrypt");
 const user = require('../models/user');
 const generateUserToken = require('../services/userJwt');
-const subir = require('../settings/pruebafirebase');
+const upload = require('../services/pruebafirebase');
 
 const addUser = async (req,res)=>{
     const {name,password,phone,lastName} = req.body;
@@ -63,9 +63,8 @@ const uploadProfile = async (req, res) => {
     const {id} = req.user;
     if(!file) return res.status(404).json({status: 'error', message:"no se proporciono ningun archivo"})
     try {
-       const url = await subir(file);
+       const url = await upload(file,"user");
        const newUser = await user.findByIdAndUpdate(id,{profilePicture:url},{new:true}).select("-password").exec();
-       console.log(newUser);
        res.status(200).json({
         status: 'success',
         newUser,
@@ -100,7 +99,6 @@ const userLogIn = async(req,res) =>{
     }
 
     const coinciden = await bcrypt.compare(password,usergot.password);
-    console.log(coinciden);
     if(!coinciden){
         return res.status(404).json({
             status: 'error',

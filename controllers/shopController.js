@@ -2,13 +2,19 @@ const validator = require('validator');
 const bcrypt = require("bcrypt");
 const shop= require('../models/shop');
 const generateShopToken = require('../services/shopJwt');
-const subir = require('../settings/pruebafirebase');
+const upload = require('../services/pruebafirebase');
 
 const addShop = async (req,res)=>{
     const {name,password,departamento,municipio,city,exactDirection,phone} = req.body;
-    if(!name || !password || !phone,!departamento || !municipio,!city){
+    if(!name || !password || !phone,!departamento || !municipio || !city){
         return res.status(400).json({error:'Informacion necesaria incompleta',status: 400});
     }
+
+    const numberExist = await shop.findOne({phone:phone});
+    if(numberExist) return res.status(403).json({
+        status:"error",
+        message:"El numero ya existe"
+    })
 
     const nameValid = validator.isLength(name,{min:2,max:undefined});
     const passwordIsValid = /\d/.test(password) && /[a-z]/.test(password) && /[A-Z]/.test(password) && /[^a-zA-Z\d]/.test(password);
@@ -60,7 +66,7 @@ const addShop = async (req,res)=>{
 };
 
 
-const getShop = async (req,res)=>{
+const getShopById = async (req,res)=>{
     const {id} = req.params;
     let shopgot;
     try {
@@ -81,7 +87,102 @@ const getShop = async (req,res)=>{
     });
 }
 
+
+const getShop = async (req, res) =>{
+    const {id} = req.shop;
+    try{
+        const shopgot = await shop.findById(id);
+        return res.status(200).json({
+            status: 'success',
+            shopgot
+        })
+    }
+    catch{
+        return res.status(404).json({
+            status: 'error',
+            message:"No se encontro la tienda"
+        });
+    }
+}
+
+const shopLogin = async (req, res) => {
+    const {phone,password} = req.body;
+    const shopgot = await shop.findOne({phone:phone});
+    if(!shopgot){
+        return res.status(404).json({
+            status: 'error',
+            message: 'shop not found'
+        });
+    }
+
+    const coinciden = await bcrypt.compare(password,shopgot.password);
+    if(!coinciden){
+        return res.status(404).json({
+            status: 'error',
+            message:'password incorrect',
+        });
+    }
+    const payload = {
+        id:shopgot.id,
+        phone:shopgot.phone,
+        name:shopgot.name,
+        departamento:shopgot.departamento,
+        municipio:shopgot.municipio,
+        city:shopgot.city,
+        exactDireccion:shopgot.exactDirection,
+        rol:shopgot.rol,
+    }
+    const token = generateShopToken(payload);
+    return res.status(200).json({
+        status: 'success',
+        message: 'Shop logged in successfully',
+        payload,
+        token
+    });
+};
+
+const uploadShopPictures = async (req,res) => {
+    const {files} = req;
+    const {id} = req.shop;
+    let url;
+    let missing;
+    let counter=0;
+    try {
+        let shopgot = await shop.findById(id);
+        for (let picture of files){
+                if(shopgot.pictures.length <= 10) {
+                    url = await upload(picture,"shop");
+                    shopgot.pictures.push(url);
+                    shopgot.save();
+                    counter++;
+                }
+                else {
+                    missing=files.length-counter;
+                }
+            
+        }
+
+
+        res.status(200).json({
+            status:"success",
+            message:"Images uploaded successfully",
+            shopgot,
+            missing
+        })
+    }
+    catch(err){
+        console.log(err);
+        res.status(404).json({
+            status: 'error',
+            message: 'Shop not found'
+        })
+    }
+}
+
 module.exports = {
     addShop,
-    getShop
+    getShopById,
+    getShop,
+    shopLogin,
+    uploadShopPictures
 };

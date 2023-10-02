@@ -1,13 +1,14 @@
 const { initializeApp } = require("firebase/app");
+require('dotenv').config();
 
 const firebaseConfig = {
-  apiKey: "AIzaSyBoZDuCL2b3Wy0Ioixcqls9NhNW78ldbdw",
-  authDomain: "hackaton-proyect-77b35.firebaseapp.com",
-  projectId: "hackaton-proyect-77b35",
-  storageBucket: "hackaton-proyect-77b35.appspot.com",
-  messagingSenderId: "999139083426",
-  appId: "1:999139083426:web:18bd2099f6305f644b03fb",
-  measurementId: "G-4YQ1P9K79T"
+  apiKey: process.env.API_KEY,
+  authDomain: process.env.AUTH_DOMAIN,
+  projectId: process.env.PROJECT_ID,
+  storageBucket: process.env.STORAGE_BUCKET,
+  messagingSenderId: process.env.MESSAGE_SENDER_ID,
+  appId: process.env.APP_ID,
+  measurementId: process.env.MEASUREMENT_ID
 };
 
 // Initialize Firebase

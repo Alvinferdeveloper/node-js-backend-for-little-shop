@@ -9,6 +9,7 @@ const shopSchema = new Schema({
     exactDirection: {type: String,required:false},
     phone: {type: String,required:true},
     rol:{type:String,default:"shop"},
+    likes:{type:Array,required:false},
     pictures:{type:Array,default:['gs://hackaton-proyect-77b35.appspot.com/usuario/default_perfil.png']}
 });
 
