@@ -3,9 +3,10 @@ const moment = require('moment');
 
 const verifyUserToken = (req,res,next) =>{
     const {authorization} = req.headers;
-    console.log(authorization);
     if(!authorization){
-        return res.status(403).json({
+        return res.status(404
+            
+            ).json({
             status:"error",
             message:"No se proporciono ningun token",
         })

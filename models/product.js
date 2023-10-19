@@ -9,7 +9,6 @@ const productSchema = new Schema({
     category:{type:String,enum:["barro","pintura","otro"]},
     rating:{type:Number,enum:[1,2,3,4,5]},
     id_shop:{type:mongoose.Types.ObjectId,ref:"shops",required:true},
-    pictures:{type:Array,defaul:['gs://hackaton-proyect-77b35.appspot.com/usuario/default_perfil.png']},
 })
 
 module.exports = model("products",productSchema);

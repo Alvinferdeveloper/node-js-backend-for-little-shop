@@ -1,8 +1,9 @@
 const validator = require('validator');
 const bcrypt = require("bcrypt");
-const shop= require('../models/shop');
+const shop = require('../models/shop');
 const generateShopToken = require('../services/shopJwt');
-const upload = require('../services/pruebafirebase');
+const { uploadPictureToCloud}= require('../services/firebaseActions');
+const shopPicture = require('../models/shopPicture')
 
 const addShop = async (req,res)=>{
     const {name,password,departamento,municipio,city,exactDirection,phone} = req.body;
@@ -67,34 +68,42 @@ const addShop = async (req,res)=>{
 
 
 const getShopById = async (req,res)=>{
-    const {id} = req.params;
+    const { id } = req.params;
     let shopgot;
+    let shopPictures;
+
+
     try {
-        shopgot = await shop.findById(id);
-        console.log(shopgot);
+        shopgot = await shop.findById(id).select(["-password","-__v"]).exec();
+        shopPictures = await shopPicture.find({id_shop:id}).select("-__v").exec();;
+       
     }
-    catch{
-        return res.status(404).json({
+    catch(err){
+        console.log(err);
+        return res.status(500).json({
             status:"error",
-            message:"No se pudo encontrar la tienda"
+            message:"Error al encontrar la tienda"
         })
     }
     
 
     return res.status(200).json({
         status:"success",
-        shopgot,
+        shop:shopgot,
+        shopPictures
     });
 }
 
 
 const getShop = async (req, res) =>{
-    const {id} = req.shop;
+    const { id } = req.shop;
     try{
-        const shopgot = await shop.findById(id);
+        const shopgot = await shop.findById(id).select("-__v").exec();
+        const pictures = await shopPicture.find({id_shop:id}).select("-__v").exec();
         return res.status(200).json({
             status: 'success',
-            shopgot
+            shopgot,
+            pictures
         })
     }
     catch{
@@ -142,39 +151,55 @@ const shopLogin = async (req, res) => {
 };
 
 const uploadShopPictures = async (req,res) => {
-    const {files} = req;
-    const {id} = req.shop;
-    let url;
-    let missing;
-    let counter=0;
+    const { files } = req;
+    const { id } = req.shop;
+    const BUCKET = "shop";
+    const MAX_OF_PICTURES = 10;
+    const picturesUploaded = [];
+    let missing = 0;
+    
+    if(!files)
+    return res.status(403).json({status:"error",message:"no se proporcionaron imagenes"});
+
     try {
-        let shopgot = await shop.findById(id);
+        let picturesForThisShop = await shopPicture.find({id_shop:id});
+        let counterOfPicturesSavedOnDb = picturesForThisShop.length;
         for (let picture of files){
-                if(shopgot.pictures.length <= 10) {
-                    url = await upload(picture,"shop");
-                    shopgot.pictures.push(url);
-                    shopgot.save();
-                    counter++;
+                if(counterOfPicturesSavedOnDb <= MAX_OF_PICTURES) {
+                    const { urlOfPicuture, fileName} = await uploadPictureToCloud(picture,BUCKET);
+                    const pictureToSave = new shopPicture({
+                        url: urlOfPicuture,
+                        firebaseName:fileName,
+                        id_shop:id,
+                    });
+                    const pictureUploaded = await pictureToSave.save();
+                    picturesUploaded.push(pictureUploaded)
+                    counterOfPicturesSavedOnDb++;
                 }
                 else {
-                    missing=files.length-counter;
+                    missing++;
                 }
             
         }
 
+        if(missing!=0 && picturesUploaded.length==0)
+        return res.status(403).json({
+            status:"error",
+            message:"Ya no se pueden agregar mas fotos a esta tienda"
+        })
 
-        res.status(200).json({
+        return res.status(200).json({
             status:"success",
-            message:"Images uploaded successfully",
-            shopgot,
+            message:"pictures uploaded successfully",
+            picturesUploaded,
             missing
         })
     }
     catch(err){
-        console.log(err);
+        console.log(err)
         res.status(404).json({
             status: 'error',
-            message: 'Shop not found'
+            message: 'product not found'
         })
     }
 }

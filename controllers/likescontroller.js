@@ -11,12 +11,11 @@ const addToLikeToModel = async (req,res,model,idFrom,idProduct) => {
         const some = document.likes.some(like => like == idProduct);
         if(some) return res.status(403).json({
             status:"error",
-            message:"some existe"
+            message:"ya existe existe"
         });
 
         document.likes.push(idProduct);
         await document.save();
-        console.log(document);
         res.status(200).json({
             status:'success',
             document
@@ -34,8 +33,8 @@ const addToLikeToModel = async (req,res,model,idFrom,idProduct) => {
 const addLike = (req,res) => {
     const USER_ROLE = "user";
     const SHOP_ROLE = "shop";
-    const {idFrom,idProduct} = req.body;
-    const {rol} = req.query;
+    const { idFrom, idProduct } = req.body;
+    const { rol } = req.query;
     if(!rol || !idFrom || !idProduct) return res.status(403).json({
         status:"error",
         message:"Falta informacion"

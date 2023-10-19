@@ -2,7 +2,7 @@ const validator = require('validator');
 const bcrypt = require("bcrypt");
 const user = require('../models/user');
 const generateUserToken = require('../services/userJwt');
-const upload = require('../services/pruebafirebase');
+const upload = require('../services/firebaseActions');
 
 const addUser = async (req,res)=>{
     const {name,password,phone,lastName} = req.body;
@@ -58,7 +58,7 @@ const addUser = async (req,res)=>{
 };
 
 
-const uploadProfile = async (req, res) => {
+const updateProfile = async (req, res) => {
     const {file} = req;
     const {id} = req.user;
     if(!file) return res.status(404).json({status: 'error', message:"no se proporciono ningun archivo"})
@@ -80,7 +80,7 @@ const uploadProfile = async (req, res) => {
 
 
 const getUser = async(req,res) =>{
-    const {id} = req.user;
+    const { id } = req.user;
     const userRecovered = await user.findById(id);
     res.status(200).json({
         status: 'success',
@@ -124,7 +124,7 @@ const userLogIn = async(req,res) =>{
 
 module.exports = {
     addUser,
-    uploadProfile,
+    updateProfile,
     getUser,
     userLogIn
 };
