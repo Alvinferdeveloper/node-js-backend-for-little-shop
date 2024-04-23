@@ -7,6 +7,6 @@ const verifyUserToken = require('../middlewares/verifyUserToken');
 router.post('/addUser',addUser);
 router.put('/updateProfile',[multer.single("profile"),verifyUserToken],updateProfile);
 router.get("/getUser",verifyUserToken,getUser);
-router.get('/userlogin',userLogIn);
+router.post('/userlogin',userLogIn);
 
 module.exports = router;

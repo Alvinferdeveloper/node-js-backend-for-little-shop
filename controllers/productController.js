@@ -4,11 +4,12 @@ const product = require('../models/product');
 const shop = require('../models/shop');
 const productPicture = require('../models/productPicture');
 const { uploadPictureToCloud, deletePictureFromCloud } = require('../services/firebaseActions');
+const shopPicture = require('../models/shopPicture');
 
 const addProduct = (req,res)=>{
-    const {name,price,availables} = req.body;
-    const {id:id_shop} = req.shop;
-    if(!name || !price || !availables){
+    const {name,price,availables,description,category} = req.body;
+    const { id } = req.params;
+    if(!name || !price || !availables || !description || !category){
         return res.status(403).json({
             status:"error",
             message:"informacion necesaria incompleta",
@@ -27,7 +28,7 @@ const addProduct = (req,res)=>{
 
     const productToAdd = {
        ...req.body,
-        id_shop
+        id_shop:id
     }
 
     const product = new Product(productToAdd);
@@ -36,7 +37,8 @@ const addProduct = (req,res)=>{
             status:"sucess",
             prod,
         })
-    }).catch(()=>{
+    }).catch((err)=>{
+        console.log(err);
         res.status(403).json({
             status:"error",
             message:"No se pudo agregarer el producto"
@@ -73,15 +75,42 @@ const getProduct = async (req,res) =>{
     });
 }
 
+const getImagesOfShop = async (req,res) => {
+    const { id } = req.params;
+    try{
+        const productsId = await Product.find({id_shop:id}).select("id").exec();
+        const imagenes = await productPicture.find({id_product:{$in:productsId}});
+        if(imagenes.length == 0){
+            return res.status(404).json({
+                status: 'error',
+                message:"no hay imagenes"
+            })
+        }
+        return res.status(200).json({
+            status:"success",
+            imagenes
+        })
+    }
+    catch{
+        return res.status(500).json({
+            status:"error",
+            message:"ocurrio un error"
+        })
+    }
+   
+
+}
+
 const uploadProductPictures = async (req,res) => {
     const { files } = req;
+    console.log(files);
     const { idProduct } = req.params;
     const BUCKET = "product";
     const MAX_OF_PICTURES = 5;
     const picturesUploaded = [];
     let missing = 0;
     
-    if(!files)
+    if(files.length == 0)
     return res.status(403).json({status:"error",message:"no se proporcionaron imagenes"});
 
     try {
@@ -154,26 +183,26 @@ const getAllProducts = async (req,res) => {
     }
 }
 
-const getProductsFromCity = async (req,res) => {
-    const { city } = req.params;
+const getProductsByCategory = async (req,res) => {
+    const { category } = req.params;
     const productWithPictures = [];
     try {
-        const shops = await shop.find({city: city},"id");
-        const idList = shops.map(idObject => idObject.id);
-        const products = await Product.find({id_shop:{$in: idList}});
+        const products = await Product.find({category:category});
         for(let product of products){
             const pictures = await productPicture.find({id_product:product.id});
+            if(pictures.length > 0)
             productWithPictures.push({
                 product,
                 pictures,
             })
         }
         return res.status(200).json({ 
-            statusbar: 'success',
+            status: 'success',
             products:productWithPictures,
         })
     }
     catch(err) {
+        console.log(err);
         res.status(500).json({
             status: 'error',
             message:"ocurrio un error al procesar la solicitud"
@@ -240,7 +269,9 @@ module.exports = {
     getProduct,
     uploadProductPictures,
     getAllProducts,
-    getProductsFromCity,
+    getProductsByCategory,
     deleteProduct,
     deletePictures,
+    getImagesOfShop
+
 };

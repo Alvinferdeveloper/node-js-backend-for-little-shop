@@ -7,7 +7,8 @@ const userRoutes = require('./routes/userRoutes');
 const shopRoutes = require('./routes/shopRoutes');
 const productRoutes = require('./routes/productRoutes');
 const likesRoutes = require('./routes/likeRoutes');
-const {ref,getStorage,deleteObject} = require('firebase/storage')
+const cartRoutes = require('./routes/carritoRoutes');
+const compraRoutes = require('./routes/compraRoutes');
 
 
 const app = express();
@@ -20,6 +21,8 @@ app.use('/',userRoutes);
 app.use('/',shopRoutes)
 app.use('/',productRoutes);
 app.use('/',likesRoutes);
+app.use('/',cartRoutes);
+app.use('/',compraRoutes);
 
 
 

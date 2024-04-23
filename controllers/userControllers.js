@@ -5,13 +5,14 @@ const generateUserToken = require('../services/userJwt');
 const upload = require('../services/firebaseActions');
 
 const addUser = async (req,res)=>{
-    const {name,password,phone,lastName} = req.body;
-    if(!name || !password || !phone){
+    const {name,password,email,lastName} = req.body;
+    console.log(req.body);
+    if(!name || !password || !email){
         return res.status(400).json({error:'Informacion necesaria incompleta',status: 400});
     }
 
-    const userWhitSamePhone = await user.findOne({phone: phone});
-    if(userWhitSamePhone){
+    const userWhitSameEmail = await user.findOne({email:email});
+    if(userWhitSameEmail){
         return res.status(403).json({
             status:"error",
             message:"Este telefono ya esta siendo usado"
@@ -19,9 +20,9 @@ const addUser = async (req,res)=>{
     }
     const nameValid = validator.isLength(name,{min:2,max:undefined});
     const passwordIsValid = /\d/.test(password) && /[a-z]/.test(password) && /[A-Z]/.test(password) && /[^a-zA-Z\d]/.test(password);
-    const phoneIsvalid = phone.length==8 && true;
+    const emailIsValid = validator.isEmail(email)
 
-    if(!nameValid || !passwordIsValid || !phoneIsvalid){
+    if(!nameValid || !passwordIsValid || !emailIsValid){
         return res.status(400).json({error:"Alguno de los campos no es valido"});
     }
     let encryptedPassword;
@@ -45,7 +46,7 @@ const addUser = async (req,res)=>{
                 id:userCreated.id,
                 name,
                 lastName,
-                phone,
+                email,
                 rol:userCreated.rol,
                 profilePicture:userCreated.profilePicture,
                 token,
@@ -89,8 +90,9 @@ const getUser = async(req,res) =>{
 }
 
 const userLogIn = async(req,res) =>{
-    const {phone,password} = req.body;
-    const usergot = await user.findOne({phone:phone});
+    const { email,password } = req.body;
+    console.log(req.body);
+    const usergot = await user.findOne({email:email});
     if(!usergot){
         return res.status(404).json({
             status: 'error',
@@ -107,7 +109,7 @@ const userLogIn = async(req,res) =>{
     }
     const payload = {
         id:usergot.id,
-        phone:usergot.phone,
+        email:usergot.email,
         name:usergot.name,
         profilePicture:usergot.profilePicture,
         rol:usergot.rol,
@@ -120,7 +122,7 @@ const userLogIn = async(req,res) =>{
         payload,
         token
     });
-};
+}
 
 module.exports = {
     addUser,

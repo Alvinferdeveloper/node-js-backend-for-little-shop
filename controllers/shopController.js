@@ -6,25 +6,26 @@ const { uploadPictureToCloud}= require('../services/firebaseActions');
 const shopPicture = require('../models/shopPicture')
 
 const addShop = async (req,res)=>{
-    const {name,password,departamento,municipio,city,exactDirection,phone} = req.body;
-    if(!name || !password || !phone,!departamento || !municipio || !city){
-        return res.status(400).json({error:'Informacion necesaria incompleta',status: 400});
+    console.log(req.body)
+    const {name,password,city,exactDirection,phone, email,nameOFOwner,departamento,municipio} = req.body;
+    console.log(req.body)
+    if(!name || !password || !phone || !city || !exactDirection || !email || !nameOFOwner) {
+        return res.status(400).json({status:"error",message:"Faltan campos"});
     }
 
-    const numberExist = await shop.findOne({phone:phone});
-    if(numberExist) return res.status(403).json({
+    const emailExist = await shop.findOne({email:email});
+    if(emailExist) return res.status(403).json({
         status:"error",
-        message:"El numero ya existe"
+        message:"El email ya existe"
     })
 
     const nameValid = validator.isLength(name,{min:2,max:undefined});
     const passwordIsValid = /\d/.test(password) && /[a-z]/.test(password) && /[A-Z]/.test(password) && /[^a-zA-Z\d]/.test(password);
     const phoneIsvalid = phone.length==8 && true;
-    const departamentoIsValid = validator.isLength(departamento,{min:3,max:undefined});
-    const municipioIsValid = validator.isLength(municipio,{min:3,max:undefined});
     const cityIsValid = validator.isLength(city,{min:3,max:undefined});
+    const emailIsValid = validator.isEmail(email);
 
-    if(!nameValid || !passwordIsValid || !phoneIsvalid || !departamentoIsValid || !municipioIsValid || !cityIsValid){
+    if(!nameValid || !passwordIsValid || !phoneIsvalid || !cityIsValid || !emailIsValid){
         return res.status(400).json({error:"Alguno de los campos no es valido"});
     }
 
@@ -46,12 +47,14 @@ const addShop = async (req,res)=>{
     shopCreated.save().then((user)=>{
         console.log(user)
         return res.status(200).json({
+            status: 'success',
             message:"tienda creado exitosamente",
-            status:200,
             shop:{
                 id:shopCreated.id,
                 name,
                 phone,
+                email,
+                nameOFOwner,
                 departamento,
                 municipio,
                 city,
@@ -61,7 +64,8 @@ const addShop = async (req,res)=>{
             }
     
         })
-    }).catch(()=>{
+    }).catch((err)=>{
+        console.log(err)
         return res.status(400).json({error:"No se pudo guardar el usuario en la base de datos",status:400});
     });
 };
